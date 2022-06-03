@@ -1,79 +1,63 @@
 package com.fpt.t2010ahellospring.controller;
 
 import com.fpt.t2010ahellospring.entity.Student;
+import com.fpt.t2010ahellospring.service.StudentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(path = "api/student")
 public class StudentController {
-    private static List<Student> list;
-    public StudentController() {
-        list = new ArrayList<>();
-        list.add(Student.builder().rollNumber("A001").fullName("So01").build());
-        list.add(Student.builder().rollNumber("A002").fullName("So02").build());
-        list.add(Student.builder().rollNumber("A003").fullName("So03").build());
-        list.add(Student.builder().rollNumber("A004").fullName("So04").build());
-        list.add(Student.builder().rollNumber("A005").fullName("So05").build());
-    }
+
+    @Autowired
+    StudentService studentService;
+
     @RequestMapping(method = RequestMethod.GET)
-    public List<Student> fillAll(){
-        return list;
+    public ResponseEntity<Iterable<Student>> getList(@RequestParam(defaultValue = "1") int page){
+        return ResponseEntity.ok(studentService.findALl());
     }
 
     @RequestMapping(path = "{id}",method = RequestMethod.GET)
-    public Student fillById(@PathVariable String id){
-        int fountIndex = -1;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getRollNumber().equals(id)){
-                fountIndex = i;
-                break;
-            }
+    public ResponseEntity<?> fillById(@PathVariable String id){
+        Optional<Student> optionalStudent = studentService.findById(id);
+        if (!optionalStudent.isPresent()){
+            ResponseEntity.badRequest().build();
         }
-        if (fountIndex == -1){
-            return null;
-        }
-        return list.get(fountIndex);
+        return ResponseEntity.ok(optionalStudent.get());
     }
+
     @RequestMapping(method = RequestMethod.POST)
-    public Student save(@RequestBody Student student){
-        list.add(student);
-        return student;
+    public ResponseEntity<Student> save(@RequestBody Student student){
+        return ResponseEntity.ok(studentService.save(student));
     }
+
     @RequestMapping(path = "{id}",method = RequestMethod.DELETE)
-    public boolean deleteById(@PathVariable String id){
-        int fountIndex = -1;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getRollNumber().equals(id)){
-                fountIndex = i;
-                break;
-            }
+    public ResponseEntity<?> deleteById(@PathVariable String id){
+        Optional<Student> optionalStudent = studentService.findById(id);
+        if (!optionalStudent.isPresent()){
+            Student student = optionalStudent.get();
+            studentService.deleteById(id);
         }
-        if (fountIndex == -1){
-            return false;
-        }
-        list.remove(fountIndex);
-        return true;
+        return ResponseEntity.ok().build();
     }
+
     @RequestMapping(path = "{id}",method = RequestMethod.PUT)
-    public Student update(@PathVariable String id,@RequestBody Student student){
-        int fountIndex = -1;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getRollNumber().equals(id)){
-                fountIndex = i;
-                break;
-            }
+    public ResponseEntity<Student> update(@PathVariable String id, @RequestBody Student student){
+        Optional<Student> optionalStudent = studentService.findById(id);
+        if (!optionalStudent.isPresent()){
+            ResponseEntity.badRequest().build();
         }
-        if (fountIndex == -1){
-            return null;
-        }
-        Student st = list.get(fountIndex);
-        st.setFullName(student.getFullName());
-        /*st.setPhone(student.getPhone());
-        st.setAddress(student.getAddress());
-        st.setDob(student.getDob());*/
-        return st;
+        Student exitStudent = optionalStudent.get();
+        exitStudent.setFullName(student.getFullName());
+        exitStudent.setPhone(student.getPhone());
+        exitStudent.setEmail(student.getEmail());
+        exitStudent.setAddress(student.getAddress());
+        exitStudent.setNote(student.getNote());
+        exitStudent.setDob(student.getDob());
+        exitStudent.setStatus(student.getStatus());
+        return ResponseEntity.ok(studentService.save(exitStudent));
     }
 }
